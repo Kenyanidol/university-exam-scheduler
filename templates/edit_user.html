@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit User - Exam Scheduler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Edit User Details</h2>
+        
+        <form method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                <input type="text" name="name" value="{{ user.name }}" required 
+                       class="w-full mt-1 p-2 border rounded focus:ring focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Admission No / Lecturer Service No</label>
+                <input type="text" name="identifier" value="{{ user.identifier }}" required 
+                       class="w-full mt-1 p-2 border rounded focus:ring focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">User Role</label>
+                <select name="role" class="w-full mt-1 p-2 border rounded focus:ring focus:ring-blue-300">
+                    <option value="student" {% if user.role == 'student' %}selected{% endif %}>Student</option>
+                    <option value="lecturer" {% if user.role == 'lecturer' %}selected{% endif %}>Lecturer</option>
+                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Administrator</option>
+                </select>
+            </div>
+
+            <div class="flex justify-between items-center mt-6">
+                <a href="{{ url_for('manage_users') }}" class="text-gray-600 hover:underline">Cancel</a>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

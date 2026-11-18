@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - University Exam Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto space-y-8">
+        
+        <!-- Header / Welcome Banner -->
+        <div class="flex justify-between items-center bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-400">Exam Scheduling Dashboard</h1>
+                <p class="text-slate-400 text-sm mt-1">
+                    Welcome, <span class="text-slate-200 font-semibold">{{ session.get('name') }}</span> 
+                    (Role: <span class="uppercase text-indigo-300 font-semibold">{{ session.get('role') }}</span>)
+                </p>
+            </div>
+            <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-sm font-semibold rounded-lg transition">Sign Out</a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="p-4 rounded-lg bg-{{ 'emerald' if category == 'success' else 'red' }}-900/50 border border-{{ 'emerald' if category == 'success' else 'red' }}-500 text-{{ 'emerald' if category == 'success' else 'red' }}-200">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Master Examination Schedule -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                <span>📅</span> Master Examination Schedule
+            </h2>
+            {% if exams %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-400 text-sm">
+                                <th class="p-3">Course Code</th>
+                                <th class="p-3">Venue</th>
+                                <th class="p-3">Start Time</th>
+                                <th class="p-3">End Time</th>
+                                <th class="p-3">Invigilator</th>
+                                {% if session.get('role') == 'admin' %}
+                                    <th class="p-3 text-right">Action</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exam in exams %}
+                            <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 group transition">
+                                <td class="p-3 font-medium">{{ exam.course_code }}</td>
+                                <td class="p-3">{{ exam.venue }}</td>
+                                <td class="p-3 text-slate-300">{{ exam.start_time }}</td>
+                                <td class="p-3 text-slate-300">{{ exam.end_time }}</td>
+                                <td class="p-3 text-indigo-300 font-medium">{{ exam.invigilator or 'Not Assigned' }}</td>
+                                
+                                {% if session.get('role') == 'admin' %}
+                                <td class="p-3 text-right">
+                                    <form action="{{ url_for('delete_exam', exam_id=exam.id) }}" method="POST" style="display:inline;">
+                                        <button type="submit" class="opacity-0 group-hover:opacity-100 transition-opacity bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1 ml-auto" title="Delete Schedule">
+                                            🗑️ Bin
+                                        </button>
+                                    </form>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-slate-400">No exams scheduled yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- ADMIN ONLY SECTIONS -->
+        {% if session.get('role') == 'admin' %}
+        
+            <!-- Backup & Recovery Management -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <h2 class="text-xl font-semibold text-slate-200">Backup & Recovery Management</h2>
+                <form action="{{ url_for('backup_database') if 'backup_database' in url_for.__globals__ else '#' }}" method="POST">
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl shadow-lg transition">Generate New Backup</button>
+                </form>
+            </div>
+
+            <!-- Upload Master Timetable / Documents -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <h2 class="text-xl font-semibold text-blue-400">Upload Master Timetable / Documents</h2>
+                <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-4">
+                    <input type="file" name="file" required class="text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600">
+                    <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 font-semibold rounded-xl transition">Upload Document</button>
+                </form>
+            </div>
+
+            <!-- Schedule New Exam (Conflict Engine Enabled) with Invigilator Dropdown -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-6">
+                <h2 class="text-xl font-semibold text-indigo-400 flex items-center gap-2">
+                    <span>➕</span> Schedule New Exam (Conflict Engine Enabled)
+                </h2>
+                <form method="POST" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Course Code</label>
+                            <input type="text" name="course_code" placeholder="e.g. CCS322" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Venue / Hall</label>
+                            <input type="text" name="venue" placeholder="e.g. A106 OR L206" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1">Start Time</label>
+        <input type="datetime-local" name="start_time" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-slate-300 mb-1">End Time</label>
+        <input type="datetime-local" name="end_time" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+    </div>
+</div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Venue Capacity</label>
+                            <input type="number" name="venue_capacity" placeholder="100" required class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-300 mb-1">Enrolled Students (Comma separated IDs)</label>
+                            <input type="text" name="enrolled_students" placeholder="STUDENT-001, STUDENT-002, STUDENT-003" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Invigilator Dropdown -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Assign Invigilator (Lecturer)</label>
+                        <select name="invigilator" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 focus:outline-none focus:border-indigo-500">
+                            <option value="">-- Select Lecturer --</option>
+                            {% for lec in lecturers %}
+                                <option value="{{ lec.name }}">{{ lec.name }} ({{ lec.identifier }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-xl shadow-lg transition">Validate & Schedule Exam</button>
+                </form>
+            </div>
+
+        {% endif %}
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Database files
+instance/
+*.db
+*.sqlite3
+
+# OS files
+.DS_Store
+Thumbs.db
+
+__pycache__/
+backups/
+system.env
+.directory
+Exam-Scheduling-System/
+venv/
+instance/
