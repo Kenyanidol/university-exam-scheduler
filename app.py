@@ -248,7 +248,7 @@ def register():
         name=name,
         password=hashed_pw,
         role=role,
-        is_first_login=True,  # 👈 Triggers first-time login check
+        is_first_login=True,  #  Triggers first-time login check
     )
     db.session.add(new_user)
     db.session.commit()
